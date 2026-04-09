@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Convert">
 <meta name="theme-color" content="#FAFAF7">
-<link rel="manifest" href="/converter/manifest.json">
+<link rel="manifest" href="/B-s-converter/manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Convert</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -535,7 +535,7 @@ function swapCurrency() {
 loadRates();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/converter/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/B-s-converter/sw.js').catch(() => {});
 }
 </script>
 </body>
