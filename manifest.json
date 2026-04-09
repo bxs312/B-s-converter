@@ -2,7 +2,7 @@
   "name": "Convert",
   "short_name": "Convert",
   "description": "Personal unit converter",
-  "start_url": "/converter//index.html",
+  "start_url": "/B-s-converter//index.html",
   "display": "standalone",
   "background_color": "#FAFAF7",
   "theme_color": "#FAFAF7",
