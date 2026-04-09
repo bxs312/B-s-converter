@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Convert">
+<meta name="theme-color" content="#FAFAF7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Convert</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #FAFAF7;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.08);
+    --text: #1A1A18;
+    --muted: #888884;
+    --hint: #BBBBB6;
+    --accent: #2D6A4F;
+    --accent-light: #E8F4EF;
+    --tab-active-bg: #1A1A18;
+    --tab-active-text: #FAFAF7;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .header {
+    padding: calc(var(--safe-top) + 18px) 20px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.3px;
+  }
+
+  .header span {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 20px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .tab.active {
+    background: var(--tab-active-bg);
+    color: var(--tab-active-text);
+    border-color: var(--tab-active-bg);
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px calc(var(--safe-bottom) + 24px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .input-unit {
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 36px;
+    font-weight: 400;
+  }
+
+  input[type=number] {
+    flex: 1;
+    border: none;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text);
+    width: 100%;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number]:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+
+  .results {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .result-key {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .result-val {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .result-val.empty { color: var(--hint); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 300; }
+
+  /* Currency specific */
+  .cur-selectors {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  select {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23888884' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 28px;
+  }
+  select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+
+  .swap-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .swap-btn:active { background: var(--accent-light); }
+  .swap-btn svg { width: 16px; height: 16px; }
+
+  .rate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 12px;
+  }
+  .rate-badge.offline { color: var(--muted); background: var(--bg); }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .dot.offline { background: var(--hint); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Convert</h1>
+    <span>personal</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="show('weight',this)">Weight</button>
+    <button class="tab" onclick="show('length',this)">Length</button>
+    <button class="tab" onclick="show('energy',this)">Energy</button>
+    <button class="tab" onclick="show('currency',this)">Currency</button>
+  </div>
+
+  <div class="content">
+
+    <!-- WEIGHT -->
+    <div class="section active" id="weight">
+      <div class="card">
+        <div class="card-title">Kilograms</div>
+        <div class="input-row">
+          <input type="number" id="w-kg" placeholder="0" inputmode="decimal" oninput="fromKg(this.value)">
+          <span class="input-unit">kg</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">pounds</span><span class="result-val empty" id="w-lbs">—</span></div>
+          <div class="result-row"><span class="result-key">stone + lbs</span><span class="result-val empty" id="w-stone">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pounds</div>
+        <div class="input-row">
+          <input type="number" id="w-lbs-in" placeholder="0" inputmode="decimal" oninput="fromLbs(this.value)">
+          <span class="input-unit">lbs</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">kilograms</span><span class="result-val empty" id="w-kg-out">—</span></div>
+          <div class="result-row"><span class="result-key">stone + lbs</span><span class="result-val empty" id="w-stone2">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Stone</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="input-row" style="flex:1;margin:0">
+            <input type="number" id="w-st" placeholder="0" inputmode="decimal" oninput="fromStone()">
+            <span class="input-unit">st</span>
+          </div>
+          <div class="input-row" style="flex:1;margin:0">
+            <input type="number" id="w-st-lbs" placeholder="0" inputmode="decimal" oninput="fromStone()">
+            <span class="input-unit">lbs</span>
+          </div>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">kilograms</span><span class="result-val empty" id="w-st-kg">—</span></div>
+          <div class="result-row"><span class="result-key">pounds total</span><span class="result-val empty" id="w-st-lbs-out">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LENGTH -->
+    <div class="section" id="length">
+      <div class="card">
+        <div class="card-title">Centimetres</div>
+        <div class="input-row">
+          <input type="number" id="l-cm" placeholder="0" inputmode="decimal" oninput="fromCm(this.value)">
+          <span class="input-unit">cm</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">inches</span><span class="result-val empty" id="l-in">—</span></div>
+          <div class="result-row"><span class="result-key">feet + inches</span><span class="result-val empty" id="l-ft">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Feet + Inches</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="input-row" style="flex:1;margin:0">
+            <input type="number" id="l-ft-in" placeholder="0" inputmode="decimal" oninput="fromFtIn()">
+            <span class="input-unit">ft</span>
+          </div>
+          <div class="input-row" style="flex:1;margin:0">
+            <input type="number" id="l-in-in" placeholder="0" inputmode="decimal" oninput="fromFtIn()">
+            <span class="input-unit">in</span>
+          </div>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">centimetres</span><span class="result-val empty" id="l-cm-out">—</span></div>
+          <div class="result-row"><span class="result-key">total inches</span><span class="result-val empty" id="l-in-out">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Inches</div>
+        <div class="input-row">
+          <input type="number" id="l-in2" placeholder="0" inputmode="decimal" oninput="fromInches(this.value)">
+          <span class="input-unit">in</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">centimetres</span><span class="result-val empty" id="l-cm2">—</span></div>
+          <div class="result-row"><span class="result-key">feet + inches</span><span class="result-val empty" id="l-ft2">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENERGY -->
+    <div class="section" id="energy">
+      <div class="card">
+        <div class="card-title">Kilojoules</div>
+        <div class="input-row">
+          <input type="number" id="e-kj" placeholder="0" inputmode="decimal" oninput="fromKj(this.value)">
+          <span class="input-unit">kJ</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">kcal / Cal</span><span class="result-val empty" id="e-kcal">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Calories (kcal)</div>
+        <div class="input-row">
+          <input type="number" id="e-kcal-in" placeholder="0" inputmode="decimal" oninput="fromKcal(this.value)">
+          <span class="input-unit">kcal</span>
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key">kilojoules</span><span class="result-val empty" id="e-kj-out">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CURRENCY -->
+    <div class="section" id="currency">
+      <div class="card">
+        <div class="card-title">Convert</div>
+        <div class="cur-selectors">
+          <select id="c-from" onchange="convertCurrency()">
+            <option value="ZAR">ZAR – Rand</option>
+            <option value="GBP">GBP – Pound</option>
+            <option value="USD">USD – Dollar</option>
+            <option value="GHS">GHS – Cedi</option>
+            <option value="EUR">EUR – Euro</option>
+          </select>
+          <button class="swap-btn" onclick="swapCurrency()" aria-label="Swap currencies">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 5.5H14M14 5.5L11 2.5M14 5.5L11 8.5M14 10.5H2M2 10.5L5 7.5M2 10.5L5 13.5" stroke="#888884" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <select id="c-to" onchange="convertCurrency()">
+            <option value="GBP">GBP – Pound</option>
+            <option value="ZAR">ZAR – Rand</option>
+            <option value="USD">USD – Dollar</option>
+            <option value="GHS">GHS – Cedi</option>
+            <option value="EUR">EUR – Euro</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <input type="number" id="c-amount" placeholder="0" inputmode="decimal" oninput="convertCurrency()">
+        </div>
+        <div class="results">
+          <div class="result-row"><span class="result-key" id="c-result-label">Result</span><span class="result-val empty" id="c-result">—</span></div>
+        </div>
+        <div class="rate-badge offline" id="c-badge"><span class="dot offline" id="c-dot"></span><span id="c-rate-note">Loading rates…</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fmt(n, dec) {
+  if (n === null || isNaN(n) || n === '') return null;
+  return parseFloat(n.toFixed(dec !== undefined ? dec : 2)).toLocaleString(undefined, { maximumFractionDigits: dec !== undefined ? dec : 2 });
+}
+
+function set(id, val, unit) {
+  const el = document.getElementById(id);
+  if (val === null) { el.textContent = '—'; el.classList.add('empty'); }
+  else { el.textContent = val + (unit ? ' ' + unit : ''); el.classList.remove('empty'); }
+}
+
+function fromKg(v) {
+  if (!v) { set('w-lbs',null); set('w-stone',null); return; }
+  const lbs = v * 2.20462;
+  const st = Math.floor(lbs / 14);
+  const rem = lbs % 14;
+  set('w-lbs', fmt(lbs,1), 'lbs');
+  set('w-stone', st + ' st ' + fmt(rem,1) + ' lbs');
+}
+function fromLbs(v) {
+  if (!v) { set('w-kg-out',null); set('w-stone2',null); return; }
+  const kg = v / 2.20462;
+  const st = Math.floor(v / 14);
+  const rem = v % 14;
+  set('w-kg-out', fmt(kg,2), 'kg');
+  set('w-stone2', st + ' st ' + fmt(rem,1) + ' lbs');
+}
+function fromStone() {
+  const st = parseFloat(document.getElementById('w-st').value) || 0;
+  const lbs = parseFloat(document.getElementById('w-st-lbs').value) || 0;
+  if (!st && !lbs) { set('w-st-kg',null); set('w-st-lbs-out',null); return; }
+  const totalLbs = st * 14 + lbs;
+  const kg = totalLbs / 2.20462;
+  set('w-st-kg', fmt(kg,2), 'kg');
+  set('w-st-lbs-out', fmt(totalLbs,1), 'lbs');
+}
+
+function fromCm(v) {
+  if (!v) { set('l-in',null); set('l-ft',null); return; }
+  const inches = v / 2.54;
+  const ft = Math.floor(inches / 12);
+  const rem = inches % 12;
+  set('l-in', fmt(inches,1), '"');
+  set('l-ft', ft + '\' ' + fmt(rem,1) + '"');
+}
+function fromFtIn() {
+  const ft = parseFloat(document.getElementById('l-ft-in').value) || 0;
+  const inch = parseFloat(document.getElementById('l-in-in').value) || 0;
+  if (!ft && !inch) { set('l-cm-out',null); set('l-in-out',null); return; }
+  const totalIn = ft * 12 + inch;
+  set('l-cm-out', fmt(totalIn * 2.54, 1), 'cm');
+  set('l-in-out', fmt(totalIn, 1), '"');
+}
+function fromInches(v) {
+  if (!v) { set('l-cm2',null); set('l-ft2',null); return; }
+  const cm = v * 2.54;
+  const ft = Math.floor(v / 12);
+  const rem = v % 12;
+  set('l-cm2', fmt(cm,1), 'cm');
+  set('l-ft2', ft + '\' ' + fmt(rem,1) + '"');
+}
+
+function fromKj(v) {
+  if (!v) { set('e-kcal',null); return; }
+  set('e-kcal', fmt(v / 4.184, 0), 'kcal');
+}
+function fromKcal(v) {
+  if (!v) { set('e-kj-out',null); return; }
+  set('e-kj-out', fmt(v * 4.184, 0), 'kJ');
+}
+
+let rates = {};
+let ratesLive = false;
+async function loadRates() {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+    rates = data.rates;
+    ratesLive = true;
+    document.getElementById('c-rate-note').textContent = 'Live rates';
+    document.getElementById('c-dot').classList.remove('offline');
+    document.getElementById('c-badge').classList.remove('offline');
+  } catch(e) {
+    rates = { ZAR: 18.5, GBP: 0.79, USD: 1, GHS: 14.5, EUR: 0.92 };
+    ratesLive = false;
+    document.getElementById('c-rate-note').textContent = 'Approximate rates (offline)';
+  }
+}
+function convertCurrency() {
+  const from = document.getElementById('c-from').value;
+  const to = document.getElementById('c-to').value;
+  const amount = parseFloat(document.getElementById('c-amount').value);
+  if (!amount || !rates[from] || !rates[to]) { set('c-result', null); document.getElementById('c-result-label').textContent = 'Result'; return; }
+  const result = (amount / rates[from]) * rates[to];
+  set('c-result', fmt(result, 2), to);
+  document.getElementById('c-result-label').textContent = amount.toLocaleString() + ' ' + from + ' =';
+  if (ratesLive) {
+    const rate = rates[to] / rates[from];
+    document.getElementById('c-rate-note').textContent = 'Live · 1 ' + from + ' = ' + fmt(rate,4) + ' ' + to;
+  }
+}
+function swapCurrency() {
+  const f = document.getElementById('c-from');
+  const t = document.getElementById('c-to');
+  [f.value, t.value] = [t.value, f.value];
+  convertCurrency();
+}
+
+loadRates();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
